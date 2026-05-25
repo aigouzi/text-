@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>金华山风景名胜</title>
+<style>
+  :root {
+    --red: #c0392b; --gold: #b8860b; --ink: #1a1a1a;
+    --charcoal: #4a4a4a; --paper: #fbf9f3; --mist: #e8e5df;
+    --white: #fff; --shadow: 0 4px 20px rgba(0,0,0,0.08);
+    --radius: 12px; --max-w: 1100px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans SC", sans-serif;
+    color: var(--charcoal); background: var(--paper); line-height: 1.8;
+  }
+
+  /* ========== HERO ========== */
+  .hero {
+    height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; text-align: center; position: relative;
+    background: linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.45)),
+      url('https://source.unsplash.com/1920x1080/?jinhua,mountain,china,landscape') center/cover no-repeat;
+    color: #fff;
+  }
+  .hero h1 {
+    font-family: "Noto Serif SC", "SimSun", "STSong", serif;
+    font-size: clamp(2.2rem, 5vw, 3.6rem); font-weight: 700;
+    letter-spacing: 6px; margin-bottom: 12px;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.4);
+  }
+  .hero .sub {
+    font-size: clamp(1rem, 2vw, 1.25rem); opacity: 0.9;
+    letter-spacing: 3px; margin-bottom: 40px;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  }
+  .hero .scroll-hint {
+    position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    animation: bounce 2s infinite; opacity: 0.7;
+  }
+  .hero .scroll-hint span { font-size: 12px; letter-spacing: 2px; }
+  .hero .scroll-hint .arrow { font-size: 20px; }
+  @keyframes bounce {
+    0%,100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(-10px); }
+  }
+
+  /* ========== NAV ========== */
+  .navbar {
+    position: sticky; top: 0; z-index: 1000;
+    background: rgba(255,255,255,0.88); backdrop-filter: blur(14px);
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    padding: 0 20px; display: flex; align-items: center;
+    justify-content: center; gap: clamp(8px, 2vw, 24px);
+    flex-wrap: wrap; min-height: 56px; transition: box-shadow 0.3s;
+  }
+  .navbar.scrolled { box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+  .navbar a {
+    text-decoration: none; color: var(--charcoal); font-size: 14px;
+    padding: 6px 10px; border-radius: 4px; transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .navbar a:hover { color: var(--red); background: rgba(192,57,43,0.06); }
+  .navbar .map-link {
+    background: var(--red); color: #fff !important; border-radius: 20px;
+    padding: 6px 18px; font-weight: bold; margin-left: 8px;
+  }
+  .navbar .map-link:hover { background: #a93226; }
+
+  /* ========== SECTION COMMON ========== */
+  section { padding: 80px 20px; }
+  .section-inner { max-width: var(--max-w); margin: 0 auto; }
+  .section-title {
+    font-family: "Noto Serif SC", "SimSun", serif;
+    font-size: clamp(1.5rem, 3vw, 2rem); color: var(--ink);
+    text-align: center; margin-bottom: 10px;
+  }
+  .section-divider {
+    width: 60px; height: 3px; background: var(--red);
+    margin: 0 auto 50px; border-radius: 2px;
+  }
+
+  /* ========== OVERVIEW ========== */
+  .overview { background: var(--white); }
+  .overview .text {
+    max-width: 720px; margin: 0 auto; text-align: center;
+    font-size: 16px; color: var(--charcoal);
+  }
+  .overview .stats-row {
+    display: flex; justify-content: center; gap: 40px;
+    flex-wrap: wrap; margin-top: 40px;
+  }
+  .overview .stat {
+    text-align: center;
+  }
+  .overview .stat .num {
+    font-family: "Noto Serif SC", serif;
+    font-size: 2rem; color: var(--red); font-weight: bold;
+  }
+  .overview .stat .lbl { font-size: 13px; color: #888; margin-top: 2px; }
+
+  /* ========== SCENIC SPOT CARD ========== */
+  .spot { background: var(--paper); }
+  .spot:nth-child(even) { background: var(--white); }
+  .spot .card {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 50px;
+    align-items: center;
+  }
+  .spot .card.reverse { direction: rtl; }
+  .spot .card.reverse .card-text { direction: ltr; }
+
+  .card-img { position: relative; overflow: hidden; border-radius: var(--radius); box-shadow: var(--shadow); }
+  .card-img img { width: 100%; height: 380px; object-fit: cover; display: block; cursor: pointer; transition: transform 0.4s; }
+  .card-img img:hover { transform: scale(1.04); }
+  .card-img .img-label {
+    position: absolute; bottom: 12px; right: 12px;
+    background: rgba(0,0,0,0.5); color: #fff; font-size: 11px;
+    padding: 3px 10px; border-radius: 10px; cursor: pointer;
+  }
+
+  .card-text h2 {
+    font-family: "Noto Serif SC", "SimSun", serif;
+    font-size: clamp(1.4rem, 2.5vw, 1.8rem);
+    color: var(--ink); margin-bottom: 4px;
+  }
+  .card-text .pinyin { font-size: 13px; color: #aaa; margin-bottom: 16px; }
+  .card-text p { font-size: 15px; margin-bottom: 12px; color: var(--charcoal); }
+
+  /* Stats bar */
+  .spot-stats {
+    display: flex; gap: 12px; flex-wrap: wrap; margin: 18px 0;
+  }
+  .spot-stats span {
+    background: #fef5f5; color: var(--red); padding: 4px 12px;
+    border-radius: 16px; font-size: 13px; font-weight: bold;
+    border: 1px solid rgba(192,57,43,0.15);
+  }
+
+  /* Highlight callout */
+  .highlight {
+    border-left: 3px solid var(--red); padding: 10px 16px;
+    background: rgba(192,57,43,0.04); border-radius: 0 8px 8px 0;
+    margin: 16px 0; font-size: 14px; color: var(--red);
+    font-weight: bold;
+  }
+
+  /* Quick info table */
+  .quick-info {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 6px 20px;
+    margin: 16px 0; font-size: 13px;
+  }
+  .quick-info .qi-label { color: #888; }
+  .quick-info .qi-value { color: var(--ink); }
+
+  /* Map link button */
+  .map-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--red); color: #fff; text-decoration: none;
+    padding: 10px 22px; border-radius: 24px; font-size: 14px;
+    font-weight: bold; margin-top: 8px; transition: all 0.2s;
+    box-shadow: 0 2px 10px rgba(192,57,43,0.25);
+  }
+  .map-btn:hover { background: #a93226; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(192,57,43,0.35); }
+
+  /* Secondary images */
+  .extra-imgs {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px;
+  }
+  .extra-imgs img {
+    width: 100%; height: 140px; object-fit: cover; border-radius: 8px;
+    cursor: pointer; transition: transform 0.3s, box-shadow 0.3s;
+  }
+  .extra-imgs img:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+
+  /* ========== ROUTE SUMMARY ========== */
+  .route-summary { background: linear-gradient(135deg, #1a3a5c, #2c5f8a); color: #fff; text-align: center; }
+  .route-summary .section-title { color: #fff; }
+  .route-summary .section-divider { background: var(--gold); }
+  .route-summary p { max-width: 600px; margin: 0 auto 30px; opacity: 0.9; font-size: 15px; }
+  .route-summary .big-map-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--gold); color: #fff; text-decoration: none;
+    padding: 14px 32px; border-radius: 28px; font-size: 17px;
+    font-weight: bold; transition: all 0.2s;
+    box-shadow: 0 4px 16px rgba(184,134,11,0.4);
+  }
+  .route-summary .big-map-btn:hover { background: #9a7209; transform: translateY(-2px); }
+
+  /* ========== FOOTER ========== */
+  .footer {
+    background: #1a1a1a; color: #888; text-align: center;
+    padding: 40px 20px; font-size: 13px;
+  }
+  .footer a { color: var(--gold); text-decoration: none; }
+  .footer a:hover { text-decoration: underline; }
+
+  /* ========== LIGHTBOX ========== */
+  .lightbox {
+    position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.88);
+    display: none; align-items: center; justify-content: center; cursor: pointer;
+  }
+  .lightbox.show { display: flex; }
+  .lightbox img { max-width: 92vw; max-height: 92vh; border-radius: 8px; box-shadow: 0 8px 40px rgba(0,0,0,0.5); }
+  .lightbox .lb-close {
+    position: absolute; top: 20px; right: 24px; color: #fff;
+    font-size: 40px; background: none; border: none; cursor: pointer;
+    width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;
+  }
+
+  /* ========== SCROLL ANIMATIONS ========== */
+  .fade-up {
+    opacity: 0; transform: translateY(30px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .fade-up.visible { opacity: 1; transform: translateY(0); }
+
+  /* ========== RESPONSIVE ========== */
+  @media (max-width: 768px) {
+    .spot .card { grid-template-columns: 1fr; gap: 24px; }
+    .spot .card.reverse { direction: ltr; }
+    .card-img img { height: 240px; }
+    .quick-info { grid-template-columns: 1fr; }
+    .extra-imgs { grid-template-columns: 1fr 1fr; }
+    .extra-imgs img:nth-child(3) { display: none; }
+    .navbar { gap: 4px; }
+    .navbar a { font-size: 12px; padding: 4px 6px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ====== HERO ====== -->
+<header class="hero">
+  <h1>金华山风景名胜</h1>
+  <p class="sub">双龙国家级风景名胜区 · 三教合一 · 名仕荟萃</p>
+  <div class="scroll-hint"><span>向下探索</span><span class="arrow">↓</span></div>
+</header>
+
+<!-- ====== STICKY NAV ====== -->
+<nav class="navbar" id="navbar">
+  <a href="#overview">金华山</a>
+  <a href="#jianfengshan">尖峰山</a>
+  <a href="#zhizhesi">智者寺</a>
+  <a href="#shuanglongdong">双龙洞</a>
+  <a href="#lunvhu">鹿女湖</a>
+  <a href="#huangdaxian">黄大仙祖宫</a>
+  <a href="#route">旅游路线</a>
+  <a class="map-link" href="jinhua-map.html" target="_blank">📌 查看地图</a>
+</nav>
+
+<!-- ====== OVERVIEW ====== -->
+<section class="overview" id="overview">
+  <div class="section-inner">
+    <h2 class="section-title">金华山 · 浙中名山</h2>
+    <div class="section-divider"></div>
+    <div class="text fade-up">
+      <p>金华山位于浙江省金华市城北，又称北山、大云山，是国家级风景名胜区、国家5A级旅游景区、国家级森林公园。山体呈东北—西南走向，绵延50余公里，主峰大盘尖海拔1314米。</p>
+      <p style="margin-top:12px;">金华山集儒、释、道三教文化于一体：南朝智者寺为佛教圣地，黄大仙祖宫为道教黄大仙祖庭，鹿田书院为儒家讲学之所。历代名人徐霞客、陆游、叶圣陶、郭沫若等均曾登临并留下诗文，是一座"名仕荟萃"的文化名山。</p>
+    </div>
+    <div class="stats-row fade-up">
+      <div class="stat"><div class="num">1314m</div><div class="lbl">主峰海拔</div></div>
+      <div class="stat"><div class="num">50km</div><div class="lbl">山脉绵延</div></div>
+      <div class="stat"><div class="num">5A</div><div class="lbl">国家景区等级</div></div>
+      <div class="stat"><div class="num">1500+</div><div class="lbl">文化历史（年）</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 尖峰山 ====== -->
+<section class="spot" id="jianfengshan">
+  <div class="section-inner">
+    <div class="card fade-up">
+      <div class="card-img">
+        <img src="https://source.unsplash.com/800x500/?mountain,peak,china,landscape" alt="尖峰山" onclick="openLightbox(this.src)">
+        <span class="img-label" onclick="openLightbox(this.parentElement.querySelector('img').src)">🔍 查看大图</span>
+      </div>
+      <div class="card-text">
+        <h2>尖峰山</h2>
+        <div class="pinyin">Jianfeng Mountain · 芙蓉峰</div>
+        <p>尖峰山又名芙蓉峰，位于金华市区北郊、金华山南麓，海拔<strong>427米</strong>，是金华市区最近的自然制高点。因山峰尖锐挺拔、形如剑锋而得名，登顶仅需40-60分钟。</p>
+        <p>尖峰山是金华人的精神图腾。金华人常说"<strong>看不到尖峰山就要哭了</strong>"，道出了尖峰山在金华游子心中的分量——无论走到哪里，只要看到尖峰山的轮廓，就知道回到了家乡。</p>
+        <p>从山顶可360度俯瞰金华全城，婺江如带穿城而过。山上有登山步道、观景平台和霞客古道，是市民日常健身和周末出游的首选之地。</p>
+        <div class="spot-stats">
+          <span>🏔 海拔427m</span><span>🆓 免费</span><span>🕐 全天开放</span><span>⏱ 登顶约50分钟</span>
+        </div>
+        <div class="highlight">"看不到尖峰山就要哭了" — 金华人的精神地标</div>
+        <div class="quick-info">
+          <span class="qi-label">📍 地址</span><span class="qi-value">金华市婺城区罗店镇</span>
+          <span class="qi-label">🚌 交通</span><span class="qi-value">Y3路公交至尖峰山站</span>
+          <span class="qi-label">🌸 最佳季节</span><span class="qi-value">春秋两季（3-5月、9-11月）</span>
+          <span class="qi-label">⏰ 建议时长</span><span class="qi-value">2-3小时</span>
+        </div>
+        <div class="extra-imgs">
+          <img src="https://source.unsplash.com/400x280/?mountain,hiking,trail" alt="登山步道" onclick="openLightbox(this.src)">
+          <img src="https://source.unsplash.com/400x280/?mountain,sunset,view" alt="山顶远眺" onclick="openLightbox(this.src)">
+          <img src="https://source.unsplash.com/400x280/?mountain,mist,morning" alt="晨雾尖峰" onclick="openLightbox(this.src)">
+        </div>
+        <a class="map-btn" href="jinhua-map.html#jianfengshan" target="_blank">📍 在地图上查看尖峰山</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 智者寺 ====== -->
+<section class="spot" id="zhizhesi">
+  <div class="section-inner">
+    <div class="card reverse fade-up">
+      <div class="card-img">
+        <img src="https://source.unsplash.com/800x500/?buddhist,temple,ancient,china" alt="智者寺" onclick="openLightbox(this.src)">
+        <span class="img-label" onclick="openLightbox(this.parentElement.querySelector('img').src)">🔍 查看大图</span>
+      </div>
+      <div class="card-text">
+        <h2>智者寺</h2>
+        <div class="pinyin">Zhizhe Temple · 皇家寺院</div>
+        <p>智者寺始建于<strong>南朝梁武帝普通七年（公元526年）</strong>，距今约1500年，是梁武帝敕建的皇家寺院。寺院位于金华山南麓入口处、尖峰山西麓，是登金华山的第一站。</p>
+        <p>智者寺是<strong>浙江省占地面积最大的佛教寺庙建筑群</strong>，占地300余亩，依山而建，气势恢宏。大雄宝殿、天王殿、藏经楼均为全国寺庙单体建筑之最。</p>
+        <p>寺院最珍贵的文物是<strong>陆游手书碑刻</strong>——南宋大诗人陆游曾游历金华山并在此留下墨宝《重修智者广福禅寺记》，现存碑刻是国家一级文物。此外，寺内还有用40多吨和田玉雕刻的<strong>玉圣山</strong>，是佛教界最大的玉石雕刻作品。</p>
+        <div class="spot-stats">
+          <span>🏛 始建于526年</span><span>🆓 免费</span><span>🕗 8:00-17:00</span><span>📐 占地300余亩</span>
+        </div>
+        <div class="highlight">陆游手书碑刻 — 镇寺之宝，千年遗韵</div>
+        <div class="quick-info">
+          <span class="qi-label">📍 地址</span><span class="qi-value">金华市婺城区罗店镇智者街</span>
+          <span class="qi-label">🚗 交通</span><span class="qi-value">自驾或公交至罗店镇</span>
+          <span class="qi-label">🧧 最佳时节</span><span class="qi-value">全年皆宜，春节香火最盛</span>
+          <span class="qi-label">⏰ 建议时长</span><span class="qi-value">1-2小时</span>
+        </div>
+        <div class="extra-imgs">
+          <img src="https://source.unsplash.com/400x280/?temple,hall,buddha" alt="大雄宝殿" onclick="openLightbox(this.src)">
+          <img src="https://source.unsplash.com/400x280/?temple,gate,chinese" alt="寺院山门" onclick="openLightbox(this.src)">
+          <img src="https://source.unsplash.com/400x280/?temple,courtyard,zen" alt="寺院庭院" onclick="openLightbox(this.src)">
+        </div>
+        <a class="map-btn" href="jinhua-map.html#zhizhesi" target="_blank">📍 在地图上查看智者寺</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 双龙洞 ====== -->
+<section class="spot" id="shuanglongdong">
+  <div class="section-inner">
+    <div class="card fade-up">
+      <div class="card-img">
+        <img src="https://source.unsplash.com/800x500/?cave,stalactite,nature" alt="双龙洞" onclick="openLightbox(this.src)">
+        <span class="img-label" onclick="openLightbox(this.parentElement.querySelector('img').src)">🔍 查看大图</span>
+      </div>
+      <div class="card-text">
+        <h2>双龙洞</h2>
+        <div class="pinyin">Shuanglong Cave · 国家5A级景区</div>
+        <p>双龙洞是<strong>国家5A级风景名胜区</strong>、国家级森林公园，是金华山最核心的景点。洞穴因洞口两侧悬垂的钟乳石形似两条龙头而得名，分为外洞和内洞两部分。</p>
+        <p>双龙洞最独特的体验是"<strong>卧船入洞</strong>"——游客需平躺在小船上，由船夫牵引绳索通过仅<strong>40厘米</strong>高的狭窄水道进入内洞。这是<strong>全国独一无二</strong>的游览方式，令每一位到访者终生难忘。</p>
+        <p>著名作家<strong>叶圣陶</strong>的散文《记金华的双龙洞》入选小学语文课本，让双龙洞成为几代中国人的共同记忆。内洞钟乳石千姿百态，"石瀑""石笋""石幔"等喀斯特地貌发育完整，配以五彩灯光，如梦如幻。</p>
+        <div class="spot-stats">
+          <span>🏆 国家5A景区</span><span>🎫 门票约90元</span><span>🕗 8:00-16:30</span><span>🏞 含冰壶洞/桃源洞</span>
+        </div>
+        <div class="highlight">卧船入洞 — 全国独一无二的游览方式，仅40厘米高的水道</div>
+        <div class="quick-info">
+          <span class="qi-label">📍 地址</span><span class="qi-value">金华市婺城区罗店镇双龙风景区</span>
+          <span class="qi-label">🚗 交通</span><span class="qi-value">自驾罗电线盘山公路上行约8公里</span>
+          <span class="qi-label">☀️ 最佳季节</span><span class="qi-value">夏季（洞内常年15℃，避暑胜地）</span>
+          <span class="qi-label">⏰ 建议时长</span><span class="qi-value">2-3小时</span>
+        </div>
+        <div class="extra-imgs">
+          <img src="https://source.unsplash.com/400x280/?cave,entrance,rock" alt="洞口" onclick="openLightbox(this.src)">
+          <img src="https://source.unsplash.com/400x280/?cave,underground,stalactite" alt="钟乳石" onclick="openLightbox(this.src)">
+          <img src="https://source.unsplash.com/400x280/?cave,waterfall,underground" alt="洞内瀑布" onclick="openLightbox(this.src)">
+        </div>
+        <a class="map-btn" href="jinhua-map.html#shuanglongdong" target="_blank">📍 在地图上查看双龙洞</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 鹿女湖 ====== -->
+<section class="spot" id="lunvhu">
+  <div class="section-inner">
+    <div class="card reverse fade-up">
+      <div class="card-img">
+        <img src="https://source.unsplash.com/800x500/?mountain,lake,forest,china" alt="鹿女湖" onclick="openLightbox(this.src)">
+        <span class="img-label" onclick="openLightbox(this.parentElement.querySelector('img').src)">🔍 查看大图</span>
+      </div>
+      <div class="card-text">
+        <h2>鹿女湖</h2>
+        <div class="pinyin">Lunv Lake · 金华小洱海</div>
+        <p>鹿女湖原名<strong>鹿田水库</strong>，位于金华山海拔约<strong>600米</strong>处，是高山人工湖，湖面面积约24万平方米。因清光绪《金华县志》记载"邑相传宋玉女驯鹿而耕"的传说而得名，2019年改造后正式命名。因其碧绿清澈的湖水与群山环抱的景色，被誉为"<strong>金华小洱海</strong>"。</p>
+        <p>环湖建有木栈道，沿途穿过<strong>水杉林</strong>。每到深秋初冬（10月下旬至12月），水杉由翠绿逐渐变为金黄、火红，倒映湖面，层林尽染，是金华最热门的网红打卡地和摄影胜地。</p>
+        <p>鹿女湖完全<strong>免费开放</strong>，设有沙滩区、花海区、露营基地和LULU PARK自然公园。湖边有金色鹿雕塑、彩虹长椅、镂空木屋观景台等打卡点，可露营、骑行、玩水上自行车，是亲子游和休闲度假的理想之选。</p>
+        <div class="spot-stats">
+          <span>🏔 海拔600m</span><span>🆓 免费</span><span>🕐 全天开放</span><span>🌊 湖面24万㎡</span>
+        </div>
+        <div class="highlight">"金华小洱海" — 海拔600米的高山明珠，全年免费</div>
+        <div class="quick-info">
+          <span class="qi-label">📍 地址</span><span class="qi-value">金华市婺城区罗店镇鹿田村</span>
+          <span class="qi-label">🚗 交通</span><span class="qi-value">自驾罗电线盘山公路上行约11公里</span>
+          <span class="qi-label">🍂 最佳季节</span><span class="qi-value">秋季10-12月（水杉红叶季）</span>
+          <span class="qi-label">⏰ 建议时长</span><span class="qi-value">半天至全天</span>
+        </div>
+        <div class="extra-imgs">
+          <img src="https://source.unsplash.com/400x280/?lake,redwood,autumn" alt="水杉林" onclick="openLightbox(this.src)">
+          <img src="https://source.unsplash.com/400x280/?lake,boardwalk,nature" alt="湖边栈道" onclick="openLightbox(this.src)">
+          <img src="https://source.unsplash.com/400x280/?lake,mountain,reflection" alt="湖光山色" onclick="openLightbox(this.src)">
+        </div>
+        <a class="map-btn" href="jinhua-map.html#lunvhu" target="_blank">📍 在地图上查看鹿女湖</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 黄大仙祖宫 ====== -->
+<section class="spot" id="huangdaxian">
+  <div class="section-inner">
+    <div class="card fade-up">
+      <div class="card-img">
+        <img src="https://source.unsplash.com/800x500/?taoist,temple,mountain,china" alt="黄大仙祖宫" onclick="openLightbox(this.src)">
+        <span class="img-label" onclick="openLightbox(this.parentElement.querySelector('img').src)">🔍 查看大图</span>
+      </div>
+      <div class="card-text">
+        <h2>黄大仙祖宫</h2>
+        <div class="pinyin">Huang Daxian Ancestral Palace · 道教圣地</div>
+        <p>黄大仙祖宫是道教<strong>黄大仙（黄初平）的祖庭</strong>。黄初平为东晋时期金华人士，传说在金华山牧羊修道，得道成仙，后被尊为"黄大仙"。他在<strong>港澳地区及东南亚</strong>华人圈中拥有广泛信众，仅香港黄大仙祠每年参拜人数即超500万。</p>
+        <p>祖宫始建于东晋，现存建筑为1996年重建，依山而建，气势恢宏。主要建筑包括山门、灵官殿、三清殿、黄大仙殿等。红墙碧瓦掩映在青山翠柏之间，云雾缭绕之时宛如仙境。</p>
+        <p>每年<strong>农历八月二十三日</strong>黄大仙诞辰，祖宫举行盛大庙会，数万信众从海内外赶来朝拜，香火鼎盛。即使非信众，祖宫的古建筑群、道教文化和绝佳的山水环境也值得一游。</p>
+        <div class="spot-stats">
+          <span>☯ 道教圣地</span><span>🎫 门票约15元</span><span>🕗 8:00-17:00</span><span>🏛 东晋始建</span>
+        </div>
+        <div class="highlight">黄大仙祖庭 — 港澳及东南亚千万信众的精神家园</div>
+        <div class="quick-info">
+          <span class="qi-label">📍 地址</span><span class="qi-value">金华市婺城区罗店镇金华山深处</span>
+          <span class="qi-label">🚗 交通</span><span class="qi-value">自驾至鹿女湖后继续上行约3公里</span>
+          <span class="qi-label">🧧 最佳时节</span><span class="qi-value">春秋两季；农历八月廿三庙会</span>
+          <span class="qi-label">⏰ 建议时长</span><span class="qi-value">1-2小时</span>
+        </div>
+        <div class="extra-imgs">
+          <img src="https://source.unsplash.com/400x280/?temple,hall,incense" alt="大殿香火" onclick="openLightbox(this.src)">
+          <img src="https://source.unsplash.com/400x280/?temple,gate,traditional" alt="祖宫山门" onclick="openLightbox(this.src)">
+          <img src="https://source.unsplash.com/400x280/?mountain,temple,mist" alt="云雾祖宫" onclick="openLightbox(this.src)">
+        </div>
+        <a class="map-btn" href="jinhua-map.html#huangdaxian" target="_blank">📍 在地图上查看黄大仙祖宫</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== ROUTE SUMMARY ====== -->
+<section class="route-summary" id="route">
+  <div class="section-inner">
+    <h2 class="section-title">浙师大 → 鹿女湖 旅游路线</h2>
+    <div class="section-divider"></div>
+    <p class="fade-up">从浙江师范大学出发，沿迎宾大道向北，经智者寺进入罗电线盘山公路，途经尖峰山、双龙洞，最终抵达海拔600米的鹿女湖。全程约<strong>11公里</strong>，驾车约30分钟，串联金华山五大核心景点，是一条集自然风光、历史文化和休闲度假于一体的经典旅游线路。</p>
+    <a class="big-map-btn fade-up" href="jinhua-map.html#route" target="_blank">🗺 在地图上查看完整路线</a>
+  </div>
+</section>
+
+<!-- ====== FOOTER ====== -->
+<footer class="footer">
+  <p>金华山风景名胜 · 双龙国家级风景名胜区 · 国家5A级旅游景区</p>
+  <p style="margin-top:6px;">文字资料参考：百度百科、金华双龙风景旅游区官网、婺城新闻网 | 图片来源：Unsplash 免费图库</p>
+  <p style="margin-top:6px;">
+    <a href="jinhua-map.html" target="_blank">📌 返回金华市地图</a>
+  </p>
+</footer>
+
+<!-- ====== LIGHTBOX ====== -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lb-close">&times;</button>
+  <img id="lightboxImg" src="" alt="" />
+</div>
+
+<script>
+// ===== LIGHTBOX =====
+function openLightbox(src) {
+  document.getElementById('lightboxImg').src = src;
+  document.getElementById('lightbox').classList.add('show');
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('show');
+}
+
+// ===== NAV SCROLL SHADOW =====
+const navbar = document.getElementById('navbar');
+window.addEventListener('scroll', () => {
+  navbar.classList.toggle('scrolled', window.scrollY > 50);
+});
+
+// ===== SCROLL ANIMATION (Intersection Observer) =====
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.15 });
+
+document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+// ===== KEYBOARD: ESC closes lightbox =====
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeLightbox();
+});
+</script>
+</body>
+</html>

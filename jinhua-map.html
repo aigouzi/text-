@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>金华市地图 - 浙江师范大学</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "Microsoft YaHei", "PingFang SC", sans-serif; }
+  #map { height: 100vh; width: 100%; }
+
+  /* 顶栏 */
+  .topbar {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 1000;
+    background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, transparent 100%);
+    padding: 14px 20px 30px; pointer-events: none;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .topbar span { color: #fff; font-size: 19px; font-weight: bold; letter-spacing: 1px; text-shadow: 0 1px 3px rgba(0,0,0,0.5); }
+
+  /* 图层切换 */
+  .layer-switcher {
+    position: absolute; top: 14px; right: 60px; z-index: 1001;
+    background: #fff; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    overflow: hidden; display: flex;
+  }
+  .layer-btn {
+    border: none; padding: 7px 13px; font-size: 13px; cursor: pointer;
+    background: #fff; color: #333; font-family: inherit; transition: all 0.2s;
+  }
+  .layer-btn.on { background: #2980b9; color: #fff; }
+  .layer-btn:hover:not(.on) { background: #f0f0f0; }
+
+  /* 回到中心按钮 */
+  .home-btn {
+    position: absolute; top: 14px; right: 14px; z-index: 1001;
+    width: 36px; height: 36px; background: #fff; border: none;
+    border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    font-size: 17px; cursor: pointer; display: flex;
+    align-items: center; justify-content: center;
+  }
+  .home-btn:hover { background: #f0f0f0; }
+
+  /* 图例面板 */
+  .legend-panel {
+    position: absolute; bottom: 24px; left: 14px; z-index: 1000;
+    background: rgba(255,255,255,0.93); padding: 10px 14px;
+    border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    font-size: 12px; display: flex; gap: 14px; flex-wrap: wrap; align-items: center;
+  }
+  .legend-panel .it { display: flex; align-items: center; gap: 5px; }
+  .legend-panel .it.clickable { cursor: pointer; text-decoration: none; color: inherit; }
+  .legend-panel .it.clickable:hover { text-decoration: underline; color: #c0392b; }
+  .legend-panel .d1 { width: 18px; height: 18px; border-radius: 50%; background: #d63031; flex-shrink: 0; }
+  .legend-panel .d2 { width: 12px; height: 12px; border-radius: 50%; background: #2980b9; flex-shrink: 0; }
+  .legend-panel .d3 { width: 12px; height: 12px; border-radius: 50%; background: #27ae60; flex-shrink: 0; }
+
+  /* 路线开关按钮 */
+  .route-toggle {
+    position: absolute; top: 60px; right: 60px; z-index: 1001;
+    background: #fff; border: 2px solid #2980b9; color: #2980b9;
+    padding: 7px 14px; border-radius: 20px; font-size: 13px;
+    cursor: pointer; font-family: inherit; font-weight: bold;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+  .route-toggle.active { background: #2980b9; color: #fff; }
+
+  /* 景点图片信息卡片 */
+  .scenic-card {
+    position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%);
+    z-index: 999; background: #fff; border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2); overflow: hidden;
+    display: none; width: 320px; transition: opacity 0.3s;
+  }
+  .scenic-card.show { display: block; animation: fadeIn 0.3s; }
+  .scenic-card img { width: 100%; height: 180px; object-fit: cover; display: block; }
+  .scenic-card .info { padding: 12px 14px; }
+  .scenic-card .info h4 { margin: 0 0 4px; font-size: 16px; color: #1a3a5c; }
+  .scenic-card .info p { margin: 2px 0; font-size: 12px; color: #666; line-height: 1.5; }
+  .scenic-card .info .tags { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+  .scenic-card .info .tags span {
+    background: #e8f4fd; color: #2980b9; padding: 2px 8px;
+    border-radius: 10px; font-size: 11px;
+  }
+  .scenic-card .close-btn {
+    position: absolute; top: 8px; right: 8px;
+    width: 26px; height: 26px; background: rgba(0,0,0,0.5); color: #fff;
+    border: none; border-radius: 50%; font-size: 14px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .scenic-card .close-btn:hover { background: rgba(0,0,0,0.7); }
+  .scenic-card .enlarge-hint {
+    position: absolute; bottom: 8px; right: 8px;
+    background: rgba(0,0,0,0.5); color: #fff; font-size: 11px;
+    padding: 3px 8px; border-radius: 4px; cursor: pointer;
+  }
+  .scenic-card .enlarge-hint:hover { background: rgba(0,0,0,0.7); }
+
+  /* 全屏图片预览 */
+  .image-overlay {
+    position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.85);
+    display: none; align-items: center; justify-content: center; cursor: pointer;
+  }
+  .image-overlay.show { display: flex; }
+  .image-overlay img {
+    max-width: 90vw; max-height: 90vh; border-radius: 8px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  }
+  .image-overlay .close-overlay {
+    position: absolute; top: 20px; right: 20px; color: #fff;
+    font-size: 36px; background: none; border: none; cursor: pointer;
+    width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;
+  }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateX(-50%) translateY(10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+
+  /* 脉冲动画 */
+  @keyframes pulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.5);opacity:0} }
+  @keyframes beat { 0%,100%{transform:scale(1)} 50%{transform:scale(1.15)} }
+
+  .leaflet-control-zoom { margin-top: 54px !important; }
+</style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<div class="topbar"><span>金华市</span><a href="jinhua-scenery.html" target="_blank" style="pointer-events:auto;color:#fff;font-size:13px;text-decoration:none;background:rgba(192,57,43,0.85);padding:6px 16px;border-radius:18px;margin-left:12px;letter-spacing:1px;">📖 风景介绍</a></div>
+
+<div class="layer-switcher">
+  <button class="layer-btn on" id="btnRoad" onclick="switchLayer('road')">地图</button>
+  <button class="layer-btn" id="btnSat" onclick="switchLayer('satellite')">卫星</button>
+</div>
+
+<button class="home-btn" onclick="map.setView([29.108, 119.647], 13)" title="回到默认视角">🏠</button>
+
+<button class="route-toggle" id="routeToggle" onclick="toggleRoute()" title="显示/隐藏旅游路线">🗺 旅游路线</button>
+
+<div class="legend-panel">
+  <a class="it clickable" onclick="flyToZJNU()"><span class="d1"></span> 浙江师范大学</a>
+  <div class="it"><span class="d3"></span> 景点/文化地标</div>
+  <div class="it"><span class="d2"></span> 其他地点</div>
+</div>
+
+<!-- 景点图片卡片 -->
+<div class="scenic-card" id="scenicCard">
+  <button class="close-btn" onclick="hideScenicCard()">✕</button>
+  <img id="scenicImg" src="" alt="" />
+  <div class="info">
+    <h4 id="scenicName"></h4>
+    <p id="scenicDesc"></p>
+    <div class="tags" id="scenicTags"></div>
+  </div>
+  <div class="enlarge-hint" onclick="enlargeImage()" title="点击查看大图">🔍 查看全景大图</div>
+</div>
+
+<!-- 全屏图片预览 -->
+<div class="image-overlay" id="imageOverlay" onclick="closeEnlarge()">
+  <button class="close-overlay" onclick="closeEnlarge()">✕</button>
+  <img id="enlargeImg" src="" alt="" />
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ===== 瓦片图层 =====
+const roadLayer = L.tileLayer('https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}', {
+  subdomains: ['1','2','3','4'], maxZoom: 18
+});
+
+const satelliteLayer = L.tileLayer('https://webst0{s}.is.autonavi.com/appmaptile?style=6&x={x}&y={y}&z={z}', {
+  subdomains: ['1','2','3','4'], maxZoom: 18
+});
+
+const satelliteLabel = L.tileLayer('https://webst0{s}.is.autonavi.com/appmaptile?style=8&x={x}&y={y}&z={z}', {
+  subdomains: ['1','2','3','4'], maxZoom: 18
+});
+
+const map = L.map('map', { center: [29.108, 119.647], zoom: 13, zoomControl: true });
+roadLayer.addTo(map);
+
+function switchLayer(type) {
+  map.removeLayer(roadLayer); map.removeLayer(satelliteLayer); map.removeLayer(satelliteLabel);
+  if (type === 'road') { roadLayer.addTo(map); }
+  else { satelliteLayer.addTo(map); satelliteLabel.addTo(map); }
+  document.getElementById('btnRoad').classList.toggle('on', type === 'road');
+  document.getElementById('btnSat').classList.toggle('on', type === 'satellite');
+}
+
+// ===== 浙师大标记（红色大圆点 + 脉冲）=====
+const univIcon = L.divIcon({
+  className: '',
+  html: `
+    <div style="position:relative;width:36px;height:36px;">
+      <div style="position:absolute;inset:0;background:#d63031;border:3px solid #fff;
+        border-radius:50%;box-shadow:0 3px 12px rgba(214,48,49,0.5);
+        animation:beat 1.6s ease-in-out infinite;z-index:2;"></div>
+      <div style="position:absolute;top:-2px;left:-2px;width:40px;height:40px;
+        background:rgba(214,48,49,0.35);border-radius:50%;
+        animation:pulse 1.6s ease-in-out infinite;z-index:1;"></div>
+    </div>`,
+  iconSize: [40, 40], iconAnchor: [20, 20], popupAnchor: [0, -22]
+});
+
+L.marker([29.1355, 119.6414], { icon: univIcon })
+  .bindPopup(`
+    <div style="min-width:210px;">
+      <b style="font-size:15px;color:#c0392b;">浙江师范大学</b>
+      <p style="margin:4px 0 0;color:#888;font-size:12px;">Zhejiang Normal University</p>
+      <hr style="margin:6px 0;border:none;border-top:1px solid #eee;">
+      <p style="margin:3px 0;">婺城区迎宾大道688号</p>
+      <p style="margin:3px 0;">省属重点大学 | 1956年创办</p>
+    </div>
+  `).addTo(map);
+
+L.marker([29.1355, 119.6414], {
+  icon: L.divIcon({
+    className: '',
+    html: '<div style="white-space:nowrap;font-size:13px;font-weight:bold;color:#c0392b;text-shadow:0 0 5px #fff,0 0 5px #fff,0 0 5px #fff;margin-left:24px;margin-top:-10px;">浙江师范大学</div>',
+    iconSize: [180, 18], iconAnchor: [0, 9]
+  })
+}).addTo(map);
+
+function flyToZJNU() {
+  map.flyTo([29.1355, 119.6414], 15, { duration: 1.2 });
+  setTimeout(() => {
+    L.popup().setLatLng([29.1355, 119.6414])
+      .setContent('<b style="color:#c0392b;">浙江师范大学</b><br>婺城区迎宾大道688号')
+      .openOn(map);
+  }, 1300);
+}
+
+// ===== 普通地点标记 =====
+const blueIcon = L.divIcon({
+  className: '',
+  html: '<div style="width:12px;height:12px;background:#2980b9;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 5px rgba(41,128,185,0.5);"></div>',
+  iconSize: [12, 12], iconAnchor: [6, 6], popupAnchor: [0, -8]
+});
+
+const greenIcon = L.divIcon({
+  className: '',
+  html: '<div style="width:14px;height:14px;background:#27ae60;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 5px rgba(39,174,96,0.5);"></div>',
+  iconSize: [14, 14], iconAnchor: [7, 7], popupAnchor: [0, -9]
+});
+
+const spots = [
+  { name: '金华市政府', lat: 29.0792, lng: 119.6476, desc: '金华市人民政府驻地', t: 'b' },
+  { name: '金华站（高铁站）', lat: 29.1032, lng: 119.6243, desc: '沪昆高铁枢纽站', t: 'b' },
+  { name: '金华南站', lat: 29.0563, lng: 119.7065, desc: '金华南火车站', t: 'b' },
+  { name: '金华万达广场', lat: 29.0730, lng: 119.6615, desc: '大型商业综合体', t: 'b' },
+  { name: '金华汽车西站', lat: 29.1010, lng: 119.6320, desc: '长途汽车客运站', t: 'b' },
+  { name: '金华职业技术学院', lat: 29.0620, lng: 119.6380, desc: '高职院校', t: 'b' },
+  { name: '金华体育中心', lat: 29.0740, lng: 119.6625, desc: '体育场馆', t: 'b' },
+  { name: '婺州古城', lat: 29.0955, lng: 119.6575, desc: '历史文化街区·古子城', t: 'g' },
+  { name: '金华市博物馆', lat: 29.0910, lng: 119.6520, desc: '金华历史文化展览', t: 'g' },
+  { name: '燕尾洲公园', lat: 29.0885, lng: 119.6610, desc: '义乌江畔城市湿地公园', t: 'g' },
+  { name: '中国婺剧院', lat: 29.0870, lng: 119.6590, desc: '金华文化新地标', t: 'g' },
+  { name: '八咏楼', lat: 29.0960, lng: 119.6565, desc: '金华千年历史名楼', t: 'g' },
+  { name: '侍王府', lat: 29.0965, lng: 119.6560, desc: '太平天国侍王府·全国重点文保', t: 'g' },
+  { name: '万佛塔', lat: 29.0968, lng: 119.6580, desc: '金华标志性古塔', t: 'g' },
+  { name: '双龙洞景区', lat: 29.1710, lng: 119.6310, desc: '5A级风景名胜区·溶洞奇观', t: 'g' },
+  { name: '黄大仙祖宫', lat: 29.1950, lng: 119.6220, desc: '道教圣地·金华山', t: 'g' },
+];
+
+spots.forEach(s => {
+  const icon = s.t === 'g' ? greenIcon : blueIcon;
+  L.marker([s.lat, s.lng], { icon: icon })
+    .bindPopup(`<b>${s.name}</b><br><span style="color:#888;font-size:12px;">${s.desc}</span>`)
+    .addTo(map);
+});
+
+// ===== 浙师大 → 鹿女湖 旅游路线（放在LayerGroup中，默认隐藏）=====
+const routeGroup = L.layerGroup();
+
+const tourRoute = [
+  [29.1355, 119.6414],  // 浙江师范大学
+  [29.1390, 119.6412],
+  [29.1430, 119.6410],
+  [29.1470, 119.6408],
+  [29.1510, 119.6405],  // 近尖峰山脚
+  [29.1550, 119.6400],
+  [29.1570, 119.6375],  // 智者寺（金华山入口）
+  [29.1600, 119.6365],  // 罗电线开始盘山上行
+  [29.1630, 119.6355],
+  [29.1660, 119.6348],
+  [29.1700, 119.6345],  // 双龙洞岔口附近
+  [29.1730, 119.6345],
+  [29.1760, 119.6340],
+  [29.1790, 119.6340],
+  [29.1820, 119.6345],
+  [29.1850, 119.6350],
+  [29.1880, 119.6350],
+  [29.1910, 119.6352],
+  [29.1940, 119.6353],
+  [29.1970, 119.6354],
+  [29.2003, 119.6355],  // 鹿女湖
+];
+
+const routeLine = L.polyline(tourRoute, {
+  color: '#2980b9', weight: 4, opacity: 0.85, smoothFactor: 1.5
+}).bindPopup('<b>浙师大 → 鹿女湖 旅游路线</b><br>迎宾大道 → 罗电线盘山公路<br>全程约 11 公里，驾车约 30 分钟');
+
+routeGroup.addLayer(routeLine);
+
+// 路线方向标注
+const midIdx = Math.floor(tourRoute.length / 2);
+const routeLabel = L.marker(tourRoute[midIdx], {
+  icon: L.divIcon({
+    className: '',
+    html: '<div style="font-size:13px;color:#2980b9;font-weight:bold;text-shadow:0 0 4px #fff,0 0 4px #fff;">↑ 罗电线盘山公路 ↑</div>',
+    iconSize: [180, 18], iconAnchor: [90, 9]
+  })
+});
+routeGroup.addLayer(routeLabel);
+
+// ===== 沿途景点数据（含高清图片）=====
+// 使用 Unsplash 高清晰度实景参考图
+const scenicData = [
+  {
+    id: 'jianfeng',
+    name: '尖峰山',
+    lat: 29.1599, lng: 119.6399,
+    desc: '金华城市地标，海拔427米。登顶可360°俯瞰金华全城，金华人常说"看不到尖峰山就要哭了"，是思乡的精神象征。',
+    tags: ['城市地标', '免费', '登山', '俯瞰金华'],
+    image: 'https://source.unsplash.com/800x500/?mountain,peak,pagoda,china',
+    enlarge: 'https://source.unsplash.com/1600x1000/?mountain,peak,pagoda,china'
+  },
+  {
+    id: 'zhizhe',
+    name: '智者寺',
+    lat: 29.1570, lng: 119.6370,
+    desc: '千年皇家古刹，始建于南朝梁武帝年间（公元526年），距今约1500年。浙江省最大寺庙建筑群，镇寺之宝为陆游手书碑刻。',
+    tags: ['千年古刹', '免费', '皇家寺院', '陆游碑刻'],
+    image: 'https://source.unsplash.com/800x500/?buddhist,temple,ancient,china',
+    enlarge: 'https://source.unsplash.com/1600x1000/?buddhist,temple,ancient,china'
+  },
+  {
+    id: 'shuanglong',
+    name: '双龙洞',
+    lat: 29.1710, lng: 119.6310,
+    desc: '国家5A级风景名胜区，以卧船入洞的独特游览方式闻名。叶圣陶《记金华的双龙洞》入选小学课本，洞内钟乳石千姿百态。',
+    tags: ['5A景区', '溶洞奇观', '卧船入洞', '叶圣陶'],
+    image: 'https://source.unsplash.com/800x500/?cave,stalactite,nature,china',
+    enlarge: 'https://source.unsplash.com/1600x1000/?cave,stalactite,nature,china'
+  },
+  {
+    id: 'lunv',
+    name: '鹿女湖',
+    lat: 29.2003, lng: 119.6355,
+    desc: '海拔约600米的高山湖泊（原鹿田水库），人称"金华小洱海"。湖水碧绿清澈，环湖有水杉林栈道、沙滩、花海，免费开放。',
+    tags: ['高山湖泊', '免费', '露营', '小洱海', '终点'],
+    image: 'https://source.unsplash.com/800x500/?mountain,lake,forest,china',
+    enlarge: 'https://source.unsplash.com/1600x1000/?mountain,lake,forest,china'
+  }
+];
+
+// 沿途景点标记（橙色圆点，点击弹出图片卡片）
+const scenicRouteIcon = L.divIcon({
+  className: '',
+  html: '<div style="width:16px;height:16px;background:#e67e22;border:2.5px solid #fff;border-radius:50%;box-shadow:0 1px 6px rgba(230,126,34,0.7);"></div>',
+  iconSize: [16, 16], iconAnchor: [8, 8]
+});
+
+// 终点鹿女湖标记（使用蓝色湖形图标）
+const lakeIcon = L.divIcon({
+  className: '',
+  html: '<div style="width:24px;height:24px;background:#2e86c1;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 10px rgba(46,134,193,0.6);"></div>',
+  iconSize: [24, 24], iconAnchor: [12, 12], popupAnchor: [0, -14]
+});
+
+scenicData.forEach((s, idx) => {
+  const isLast = idx === scenicData.length - 1;
+  const icon = isLast ? lakeIcon : scenicRouteIcon;
+
+  const marker = L.marker([s.lat, s.lng], { icon: icon });
+
+  marker.on('click', () => showScenicCard(s));
+
+  routeGroup.addLayer(marker);
+
+  // 文字标签
+  const label = L.marker([s.lat + 0.001, s.lng + 0.001], {
+    icon: L.divIcon({
+      className: '',
+      html: `<div style="white-space:nowrap;font-size:11px;font-weight:bold;color:${isLast ? '#2e86c1' : '#e67e22'};text-shadow:0 0 4px #fff,0 0 4px #fff;">${isLast ? '终点：' : ''}${s.name}</div>`,
+      iconSize: [100, 16], iconAnchor: [0, 8]
+    })
+  });
+  routeGroup.addLayer(label);
+});
+
+// ===== 景点图片卡片逻辑 =====
+let currentScenic = null;
+
+function showScenicCard(data) {
+  currentScenic = data;
+  document.getElementById('scenicImg').src = data.image;
+  document.getElementById('scenicName').textContent = data.name;
+  document.getElementById('scenicDesc').textContent = data.desc;
+  const tagsEl = document.getElementById('scenicTags');
+  tagsEl.innerHTML = data.tags.map(t => `<span>${t}</span>`).join('');
+  document.getElementById('scenicCard').classList.add('show');
+}
+
+function hideScenicCard() {
+  document.getElementById('scenicCard').classList.remove('show');
+  currentScenic = null;
+}
+
+function enlargeImage() {
+  if (!currentScenic) return;
+  document.getElementById('enlargeImg').src = currentScenic.enlarge;
+  document.getElementById('imageOverlay').classList.add('show');
+}
+
+function closeEnlarge() {
+  document.getElementById('imageOverlay').classList.remove('show');
+}
+
+// ===== 路线显示/隐藏切换 =====
+let routeVisible = false;
+
+function toggleRoute() {
+  const btn = document.getElementById('routeToggle');
+  if (routeVisible) {
+    map.removeLayer(routeGroup);
+    hideScenicCard();
+    btn.classList.remove('active');
+    routeVisible = false;
+  } else {
+    routeGroup.addTo(map);
+    btn.classList.add('active');
+    routeVisible = true;
+    // 显示路线后调整视野
+    map.fitBounds([
+      [29.1355, 119.6310],
+      [29.2003, 119.6414]
+    ], { padding: [50, 200] });
+  }
+}
+
+// ===== 初始视野 =====
+setTimeout(() => { map.setView([29.115, 119.647], 13); }, 200);
+
+// Esc 关闭
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    hideScenicCard();
+    closeEnlarge();
+  }
+});
+
+// ===== URL Hash 导航（从风景介绍页跳转过来）=====
+const spotCoords = {
+  jianfengshan:  { lat: 29.1599, lng: 119.6399, zoom: 15, name: '尖峰山' },
+  zhizhesi:      { lat: 29.1570, lng: 119.6370, zoom: 15, name: '智者寺' },
+  shuanglongdong:{ lat: 29.1710, lng: 119.6310, zoom: 15, name: '双龙洞' },
+  lunvhu:        { lat: 29.2003, lng: 119.6355, zoom: 15, name: '鹿女湖' },
+  huangdaxian:   { lat: 29.1950, lng: 119.6220, zoom: 15, name: '黄大仙祖宫' },
+  route:         { lat: 29.1680, lng: 119.6380, zoom: 13, name: '旅游路线' },
+};
+
+const hash = window.location.hash.slice(1);
+if (hash && spotCoords[hash]) {
+  const spot = spotCoords[hash];
+  setTimeout(() => {
+    map.flyTo([spot.lat, spot.lng], spot.zoom, { duration: 1.5 });
+    if (!routeVisible) toggleRoute();
+    setTimeout(() => {
+      if (hash !== 'route') {
+        L.popup()
+          .setLatLng([spot.lat, spot.lng])
+          .setContent('<b>' + spot.name + '</b>')
+          .openOn(map);
+      }
+    }, 1600);
+  }, 400);
+}
+</script>
+</body>
+</html>
